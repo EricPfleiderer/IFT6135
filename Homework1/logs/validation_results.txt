@@ -1,0 +1,18 @@
+----------------------GRID SEARCH START----------------------
+Training for 1 epochs.
+Final validation accuracy for shape:(764, 256) and activation:relu is 0.3707.
+Final validation accuracy for shape:(764, 256) and activation:tanh is 0.3648.
+Final validation accuracy for shape:(764, 256) and activation:sigmoid is 0.1969.
+Final validation accuracy for shape:(1024, 512, 64, 64) and activation:relu is 0.3459.
+Final validation accuracy for shape:(1024, 512, 64, 64) and activation:tanh is 0.3605.
+Final validation accuracy for shape:(1024, 512, 64, 64) and activation:sigmoid is 0.1012.
+----------------------GRID SEARCH END----------------------
+----------------------GRID SEARCH START----------------------
+Training for 20 epochs.
+Final validation accuracy for shape:(764, 256) and activation:relu is 0.5044.
+Final validation accuracy for shape:(764, 256) and activation:tanh is 0.4819.
+Final validation accuracy for shape:(764, 256) and activation:sigmoid is 0.3542.
+Final validation accuracy for shape:(1024, 512, 64, 64) and activation:relu is 0.5121.
+Final validation accuracy for shape:(1024, 512, 64, 64) and activation:tanh is 0.4931.
+Final validation accuracy for shape:(1024, 512, 64, 64) and activation:sigmoid is 0.1739.
+----------------------GRID SEARCH END----------------------
