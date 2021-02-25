@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torchvision
-import torch.nn as nn
 
 
 def one_hot(y, n_classes=10):
@@ -20,6 +19,9 @@ def load_cifar10(root, flatten=False):
     :param flatten: When True, dataset is reshaped to (num_examples, 3072), otherwise shape is (num_examples, 3, 32, 32)
     :return: train, valid and test set in numpy arrays
     """
+
+    print('Loading data set...')
+
     transform = torchvision.transforms.ToTensor()
 
     train_dataset = torchvision.datasets.CIFAR10(root, train=True, transform=transform, download=True)
@@ -176,7 +178,7 @@ class NN(object):
         prediction[np.where(prediction < self.epsilon)] = self.epsilon
         prediction[np.where(prediction > 1 - self.epsilon)] = 1 - self.epsilon
         return np.mean(-np.log(np.sum(prediction * labels, axis=1)))
-        #return -np.sum(labels * np.log(prediction))
+        # return -np.sum(labels * np.log(prediction))
 
     def compute_loss_and_accuracy(self, X, y):
         one_y = y
@@ -196,7 +198,6 @@ class NN(object):
         n_batches = int(np.ceil(X_train.shape[0] / self.batch_size))
 
         for epoch in range(n_epochs):
-            print(epoch)
             for batch in range(n_batches):
                 minibatchX = X_train[self.batch_size * batch:self.batch_size * (batch + 1), :]
                 minibatchY = y_onehot[self.batch_size * batch:self.batch_size * (batch + 1), :]

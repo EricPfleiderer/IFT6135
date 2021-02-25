@@ -1,0 +1,150 @@
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 0
+INFO:root:train_loss:0.1364
+INFO:root:train_accuracy:0.26
+INFO:root:validation_loss:0.0328
+INFO:root:validation_accuracy:0.35
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 1
+INFO:root:train_loss:0.1307
+INFO:root:train_accuracy:0.36
+INFO:root:validation_loss:0.0325
+INFO:root:validation_accuracy:0.37
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 2
+INFO:root:train_loss:0.1278
+INFO:root:train_accuracy:0.41
+INFO:root:validation_loss:0.0321
+INFO:root:validation_accuracy:0.4
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 3
+INFO:root:train_loss:0.1263
+INFO:root:train_accuracy:0.43
+INFO:root:validation_loss:0.0315
+INFO:root:validation_accuracy:0.44
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 4
+INFO:root:train_loss:0.1253
+INFO:root:train_accuracy:0.45
+INFO:root:validation_loss:0.0315
+INFO:root:validation_accuracy:0.44
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 5
+INFO:root:train_loss:0.1244
+INFO:root:train_accuracy:0.47
+INFO:root:validation_loss:0.0312
+INFO:root:validation_accuracy:0.46
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 6
+INFO:root:train_loss:0.1241
+INFO:root:train_accuracy:0.47
+INFO:root:validation_loss:0.0313
+INFO:root:validation_accuracy:0.45
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 7
+INFO:root:train_loss:0.1234
+INFO:root:train_accuracy:0.48
+INFO:root:validation_loss:0.0312
+INFO:root:validation_accuracy:0.46
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 8
+INFO:root:train_loss:0.1234
+INFO:root:train_accuracy:0.48
+INFO:root:validation_loss:0.031
+INFO:root:validation_accuracy:0.47
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 9
+INFO:root:train_loss:0.123
+INFO:root:train_accuracy:0.49
+INFO:root:validation_loss:0.0314
+INFO:root:validation_accuracy:0.44
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 10
+INFO:root:train_loss:0.1225
+INFO:root:train_accuracy:0.5
+INFO:root:validation_loss:0.0312
+INFO:root:validation_accuracy:0.46
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 11
+INFO:root:train_loss:0.1223
+INFO:root:train_accuracy:0.5
+INFO:root:validation_loss:0.0307
+INFO:root:validation_accuracy:0.49
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 12
+INFO:root:train_loss:0.122
+INFO:root:train_accuracy:0.51
+INFO:root:validation_loss:0.0315
+INFO:root:validation_accuracy:0.44
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 13
+INFO:root:train_loss:0.1224
+INFO:root:train_accuracy:0.5
+INFO:root:validation_loss:0.0311
+INFO:root:validation_accuracy:0.47
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 14
+INFO:root:train_loss:0.1218
+INFO:root:train_accuracy:0.51
+INFO:root:validation_loss:0.031
+INFO:root:validation_accuracy:0.47
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 15
+INFO:root:train_loss:0.1219
+INFO:root:train_accuracy:0.51
+INFO:root:validation_loss:0.0308
+INFO:root:validation_accuracy:0.48
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 16
+INFO:root:train_loss:0.1222
+INFO:root:train_accuracy:0.5
+INFO:root:validation_loss:0.0321
+INFO:root:validation_accuracy:0.4
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 17
+INFO:root:train_loss:0.1224
+INFO:root:train_accuracy:0.5
+INFO:root:validation_loss:0.0312
+INFO:root:validation_accuracy:0.46
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 18
+INFO:root:train_loss:0.1223
+INFO:root:train_accuracy:0.5
+INFO:root:validation_loss:0.0309
+INFO:root:validation_accuracy:0.48
+INFO:root:-----------------------------------
+INFO:root:-----------------------------------
+INFO:root:epoch: 19
+INFO:root:train_loss:0.1228
+INFO:root:train_accuracy:0.5
+INFO:root:validation_loss:0.0313
+INFO:root:validation_accuracy:0.45
+INFO:root:-----------------------------------

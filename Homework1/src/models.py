@@ -36,7 +36,7 @@ class NN2(NN):
         n_batches = int(np.ceil(X_train.shape[0] / self.batch_size))
 
         for epoch in range(n_epochs):
-            print(epoch)
+            print('epoch: ', epoch)
             for batch in range(n_batches):
                 minibatchX = X_train[self.batch_size * batch:self.batch_size * (batch + 1), :]
                 minibatchY = y_onehot[self.batch_size * batch:self.batch_size * (batch + 1), :]
@@ -135,5 +135,24 @@ class CNN(nn.Module):
 
     @torch.no_grad()
     def validation_step(self):
-        pass
+        running_loss = 0.0
+        running_hits = 0
+
+        for i, data in enumerate(self.val_loader):
+            # get the inputs; data is a list of [inputs, labels]
+            inputs, labels = data
+
+            # forward + backward + optimize
+            outputs = self.forward(inputs)
+            loss = self.criterion(outputs, labels.long())
+
+            running_loss += loss.item()
+            running_hits += np.where(np.argmax(outputs.numpy(), axis=1) == labels.numpy())[0].size
+
+        # Average loss and accuracy over data set for the current epoch
+        loss = running_loss / (len(self.val_loader)*self.val_loader.batch_size)
+        accuracy = running_hits / (len(self.val_loader) * self.val_loader.batch_size)
+
+        self.train_logs['validation_loss'].append(loss)
+        self.train_logs['validation_accuracy'].append(accuracy)
 

@@ -5,6 +5,7 @@ Class: IFT6135 - Representation learning
 Author: Eric Pfleiderer
 """
 from multiprocessing import Process
+import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -73,10 +74,7 @@ def validate_config(l, a, number_epochs=20):
     neural_net.train_loop(number_epochs)
     final_val = neural_net.train_logs['validation_accuracy'][-1]
 
-    with open('logs/validation_results.txt', 'a') as f:
-        f.write(f'Final validation accuracy for shape:{l} and activation:{a} is {final_val}.\n')
-
-    print(f'Final validation accuracy for shape:{l} and activation:{a} is {final_val}.\n')
+    logging.INFO(f'Final validation accuracy for shape:{l} and activation:{a} is {final_val}.\n')
 
 
 def launch_grid_search(number_epochs=20):
@@ -85,13 +83,11 @@ def launch_grid_search(number_epochs=20):
                     'activation': ['relu', 'tanh', 'sigmoid']
                     }
 
-    processes = []
-
-    with open('logs/validation_results.txt', 'a') as f:
-        f.write('----------------------GRID SEARCH START----------------------\n')
-        f.write(f'Training for {number_epochs} epochs.\n')
+    logging.INFO('----------------------GRID SEARCH START----------------------\n')
+    logging.INFO(f'Training for {number_epochs} epochs.\n')
 
     # Spin up parallel processes to speed things up
+    processes = []
     for layers in hparam_space['layers']:
         for activation in hparam_space['activation']:
             validate_config(layers, activation)
@@ -103,8 +99,7 @@ def launch_grid_search(number_epochs=20):
     for p in processes:
         p.join()
 
-    with open('logs/validation_results.txt', 'a') as f:
-        f.write(f'----------------------GRID SEARCH END----------------------\n')
+    logging.INFO(f'----------------------GRID SEARCH END----------------------\n')
 
 
 # Q4
@@ -115,47 +110,64 @@ def Q4():
 def train_CNN(number_epochs=20):
 
     # Split data by features / targets
-    train_x, train_y = train_data[0], train_data[1]
-    val_x, val_y = valid_data[0], valid_data[1]
+    train_x, train_y = data[0][0], data[0][1]
+    val_x, val_y = data[1][0], data[1][1]
 
     # Collapse onehot labels
     train_y, val_y = np.argmax(train_y, axis=1), np.argmax(val_y, axis=1)
 
     # Convert data to torch tensors and wrap in a dataloader
     tensor_x_train, tensor_y_train = torch.Tensor(train_x), torch.Tensor(train_y)
-    train_loader = DataLoader(TensorDataset(tensor_x_train, tensor_y_train), batch_size=16, shuffle=True, num_workers=1)
+    train_loader = DataLoader(TensorDataset(tensor_x_train, tensor_y_train), batch_size=16, shuffle=True)
     tensor_x_val, tensor_y_val = torch.Tensor(val_x), torch.Tensor(val_y)
-    val_loader = DataLoader(TensorDataset(tensor_x_val, tensor_y_val), batch_size=16, shuffle=False, num_workers=1)
+    val_loader = DataLoader(TensorDataset(tensor_x_val, tensor_y_val), batch_size=64, shuffle=False)
 
     # Train the model
     net = CNN(train_loader, val_loader, optim.Adam, nn.CrossEntropyLoss)
-    # TODO: send training to gpu
-    # net.to(torch.device('cuda'))
 
     for epoch in range(number_epochs):
-        print('epoch: ', epoch)
+        logging.info('-----------------------------------')
+        logging.info('epoch: ' + str(epoch))
         net.step()
-        print('train_loss:', net.train_logs['train_loss'][-1])
-        print('train_accuracy:', net.train_logs['train_accuracy'][-1])
+        logging.info('train_loss:' + str(round(net.train_logs['train_loss'][-1], 4)))
+        logging.info('train_accuracy:' + str(round(net.train_logs['train_accuracy'][-1], 2)))
+        logging.info('validation_loss:' + str(round(net.train_logs['validation_loss'][-1], 4)))
+        logging.info('validation_accuracy:' + str(round(net.train_logs['validation_accuracy'][-1], 2)))
+        logging.info('-----------------------------------')
 
     return net
 
 
 def plot_cnn_vs_nn(number_epochs=20):
 
-    net = train_CNN(number_epochs=number_epochs)
+    cnn = train_CNN(number_epochs=number_epochs)
+
+    nn = NN(hidden_dims=(784, 256),
+            epsilon=1e-6,
+            lr=0.01,
+            batch_size=64,
+            seed=1,
+            activation="relu",
+            data=flat_data)
+
+    print('Training glorot net...')
+    nn.train_loop(number_epochs)
 
     plt.figure()
-    plt.plot(range(number_epochs), net.train_logs['train_loss'], label='train_loss')
-    # plt.plot(range(number_epochs), net.train_logs['validation_loss'], label='validation_accuracy')
+    plt.plot(range(number_epochs), cnn.train_logs['train_loss'], label='cnn train_loss', linestyle="--")
+    plt.plot(range(number_epochs), cnn.train_logs['validation_loss'], label='cnn validation_loss', linestyle="--")
+    plt.plot(range(number_epochs), nn.train_logs['train_loss'], label='nn train_loss')
+    plt.plot(range(number_epochs), nn.train_logs['validation_loss'], label='nn validation_loss')
     plt.legend(loc='best')
     plt.xlabel('epoch')
     plt.ylabel('loss')
     plt.show()
 
     plt.figure()
-    plt.plot(range(number_epochs), net.train_logs['train_accuracy'], label='train_accuracy')
-    # plt.plot(range(number_epochs), net.train_logs['validation_accuracy'], label='validation_accuracy')
+    plt.plot(range(number_epochs), cnn.train_logs['train_accuracy'], label='cnn train_accuracy', linestyle="--")
+    plt.plot(range(number_epochs), cnn.train_logs['validation_accuracy'], label='cnn validation_accuracy', linestyle="--")
+    plt.plot(range(number_epochs), nn.train_logs['train_accuracy'], label='nn train_accuracy')
+    plt.plot(range(number_epochs), nn.train_logs['validation_accuracy'], label='nn validation_accuracy')
     plt.legend(loc='best')
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
@@ -163,6 +175,20 @@ def plot_cnn_vs_nn(number_epochs=20):
 
 
 if __name__ == '__main__':
+
+    import sys
+
+    # Add logger
+    logging_level = logging.INFO
+    logging.basicConfig(filename='logs/general.txt')
+    root = logging.getLogger()
+    root.setLevel(logging_level)
+
+    # Add handler to std out
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging_level)
+    root.addHandler(handler)
+
     # Q2
     # compare_inits()
 
