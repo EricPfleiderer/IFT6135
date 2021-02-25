@@ -1,6 +1,7 @@
 import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
+import torch
 
 from Homework1.src.solution import NN
 
@@ -58,8 +59,11 @@ class NN2(NN):
 
 # Q5
 class CNN(nn.Module):
-    def __init__(self):
+    def __init__(self, train_loader, val_loader, optimizer, criterion):
         super(CNN, self).__init__()
+        self.to(torch.device("cuda:0" if torch.cuda.is_available() else "cpu"))
+
+        # Model
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=6, kernel_size=5, stride=1, padding=0)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.conv2 = nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5)
@@ -68,6 +72,22 @@ class CNN(nn.Module):
         self.fc3 = nn.Linear(in_features=84, out_features=10)
         self.softmax = nn.Softmax(dim=1)
 
+        # Data
+        self.train_loader = train_loader
+        self.val_loader = val_loader
+
+        # Loss / optimizer
+        self.optimizer = optimizer(self.parameters())
+        self.criterion = criterion()
+
+        # Training logs
+        self.train_logs = dict()
+        self.train_logs['train_accuracy'] = []
+        self.train_logs['validation_accuracy'] = []
+        self.train_logs['train_loss'] = []
+        self.train_logs['validation_loss'] = []
+
+    # Forward pass
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = self.pool(x)
@@ -79,3 +99,41 @@ class CNN(nn.Module):
         x = self.fc3(x)
         x = self.softmax(x)
         return x
+
+    # Full training step, including validation
+    def step(self):
+        self.train_step()
+        self.validation_step()
+
+    def train_step(self):
+
+        running_loss = 0.0
+        running_hits = 0
+
+        for i, data in enumerate(self.train_loader):
+            # get the inputs; data is a list of [inputs, labels]
+            inputs, labels = data
+
+            # zero the parameter gradients
+            self.optimizer.zero_grad()
+
+            # forward + backward + optimize
+            outputs = self.forward(inputs)
+            loss = self.criterion(outputs, labels.long())
+            loss.backward()
+            self.optimizer.step()
+
+            running_loss += loss.item()
+            running_hits += np.where(np.argmax(outputs.detach().numpy(), axis=1) == labels.numpy())[0].size
+
+        # Average loss and accuracy over data set for the current epoch
+        loss = running_loss / (len(self.train_loader)*self.train_loader.batch_size)
+        accuracy = running_hits / (len(self.train_loader) * self.train_loader.batch_size)
+
+        self.train_logs['train_loss'].append(loss)
+        self.train_logs['train_accuracy'].append(accuracy)
+
+    @torch.no_grad()
+    def validation_step(self):
+        pass
+
