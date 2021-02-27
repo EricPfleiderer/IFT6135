@@ -130,9 +130,15 @@ class NN(object):
             raise Exception("invalid")
 
     def softmax(self, x):
+
         # Remember that softmax(x-C) = softmax(x) when C is a constant.
-        shift = x - np.amax(x, axis=1)[:, None] # TODO: max amongst axis or amongst whole batch?
-        return np.exp(shift)/np.sum(np.exp(shift), axis=1)[:, None]
+        if x.ndim == 1:
+            shift = x - np.amax(x)
+            return np.exp(shift)/np.sum(np.exp(shift))
+
+        elif x.ndim == 2:
+            shift = x - np.amax(x, axis=1)[:, None]
+            return np.exp(shift)/np.sum(np.exp(shift), axis=1)[:, None]
 
     def forward(self, x):
         cache = {"Z0": x}
@@ -198,6 +204,7 @@ class NN(object):
         n_batches = int(np.ceil(X_train.shape[0] / self.batch_size))
 
         for epoch in range(n_epochs):
+            print('epoch:', epoch)
             for batch in range(n_batches):
                 minibatchX = X_train[self.batch_size * batch:self.batch_size * (batch + 1), :]
                 minibatchY = y_onehot[self.batch_size * batch:self.batch_size * (batch + 1), :]
