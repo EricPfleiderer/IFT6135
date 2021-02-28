@@ -4,14 +4,18 @@ Assignment 1
 Class: IFT6135 - Representation learning
 Author: Eric Pfleiderer
 """
-from multiprocessing import Process
-import logging
 
-import numpy as np
-import matplotlib.pyplot as plt
+import logging
+import sys
+import time
+from multiprocessing import Process
+from copy import deepcopy
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, TensorDataset
 
 from Homework1.src.solution import NN, load_cifar10
@@ -58,7 +62,7 @@ def compare_inits(number_epochs=20):
     plt.xlabel('epoch')
     plt.ylabel('training loss')
     plt.legend(loc='best')
-    plt.savefig('imgs/q2_train_loss.pdf')
+    plt.savefig('imgs/q2_train_loss_' + time.strftime("%Y%m%d-%H%M%S") + '.pdf')
 
 
 # Train a single model from config and write validation results to file
@@ -107,7 +111,7 @@ def Q4():
     pass
 
 
-def train_CNN(number_epochs=20):
+def train_CNN(number_epochs=20, dropout=False, L2=False):
 
     # Split data by features / targets
     train_x, train_y = data[0][0], data[0][1]
@@ -118,31 +122,97 @@ def train_CNN(number_epochs=20):
 
     # Convert data to torch tensors and wrap in a dataloader
     tensor_x_train, tensor_y_train = torch.Tensor(train_x), torch.Tensor(train_y)
-    train_loader = DataLoader(TensorDataset(tensor_x_train, tensor_y_train), batch_size=16, shuffle=True)
+    train_loader = DataLoader(TensorDataset(tensor_x_train, tensor_y_train), batch_size=32, shuffle=True)
     tensor_x_val, tensor_y_val = torch.Tensor(val_x), torch.Tensor(val_y)
-    val_loader = DataLoader(TensorDataset(tensor_x_val, tensor_y_val), batch_size=64, shuffle=False)
+    val_loader = DataLoader(TensorDataset(tensor_x_val, tensor_y_val), batch_size=256, shuffle=False)
 
     # Train the model
-    net = CNN(train_loader, val_loader, optim.Adam, nn.CrossEntropyLoss)
+    net = CNN(train_loader, val_loader, optim.SGD, nn.CrossEntropyLoss, dropout, L2=L2)
 
     for epoch in range(number_epochs):
         logging.info('-----------------------------------')
         logging.info('epoch: ' + str(epoch))
         net.step()
-        logging.info('train_loss:' + str(round(net.train_logs['train_loss'][-1], 4)))
-        logging.info('train_accuracy:' + str(round(net.train_logs['train_accuracy'][-1], 2)))
-        logging.info('validation_loss:' + str(round(net.train_logs['validation_loss'][-1], 4)))
-        logging.info('validation_accuracy:' + str(round(net.train_logs['validation_accuracy'][-1], 2)))
+
+        for k, v in net.train_logs.items():
+            logging.info(k + ": " + str(round(v[-1], 4)))
+
         logging.info('-----------------------------------')
 
     return net
+
+
+def compare_gradients(number_epochs=20):
+
+    net = NN(hidden_dims=(1024, 512, 64, 64),
+             epsilon=1e-6,
+             lr=0.01,
+             batch_size=64,
+             seed=1,
+             activation="relu",
+             data=flat_data)
+
+    print('Training glorot net...')
+    net.train_loop(number_epochs)
+
+    # Single data point (batched)
+    x = flat_train_data[0][0][None, :]
+    target = flat_train_data[1][0][None, :]
+
+    # Get 100 first parameters of the last layer
+    layer_id = net.n_hidden+1
+    weights = net.weights[f'W{layer_id}']
+    N = np.array([10**i for i in range(1, 6)])
+    p = np.minimum(100, weights.size)
+
+    # Compute finite differences
+    finite_diffs = np.empty(shape=(N.size, p))
+    for i, n in enumerate(N):
+        epsilon = 1/n
+        for j in range(p):
+            idx = j // weights.shape[1]
+            idy = j % weights.shape[1]
+
+            # Delta +
+            weights[idx, idy] -= epsilon
+            pred_m = net.forward(x)[f'Z{layer_id}']
+            loss_m = net.loss(pred_m, target)
+            weights[idx, idy] += epsilon
+
+            # Delta +
+            weights[idx, idy] += epsilon
+            pred_p = net.forward(x)[f'Z{layer_id}']
+            loss_p = net.loss(pred_p, target)
+            weights[idx, idy] += epsilon
+
+            finite_diffs[i, j] = (loss_p-loss_m)/(2*epsilon)
+
+    # Compute exact derivatives
+    forward = net.forward(x)
+    grads = net.backward(forward, target)[f'dW{layer_id}']
+    exact_diffs = np.empty(shape=(100,))
+    for m in range(p):
+        idx = m // grads.shape[1]
+        idy = m % grads.shape[1]
+        exact_diffs[m] = grads[idx, idy]
+
+    # Compute difference between derivatives
+    diffs = finite_diffs - exact_diffs  # 5x100 and 100
+    max_diffs = np.max(diffs, axis=1)
+
+    plt.figure()
+    plt.plot(N, max_diffs)
+    plt.xscale('log')
+    plt.xlabel('n')
+    plt.ylabel('max diff')
+    plt.savefig('imgs/maxdiff_vs_n_' + time.strftime("%Y%m%d-%H%M%S") + '.pdf')
 
 
 def plot_cnn_vs_nn(number_epochs=20):
 
     cnn = train_CNN(number_epochs=number_epochs)
 
-    nn = NN(hidden_dims=(784, 256),
+    nn = NN(hidden_dims=(1024, 512, 64, 64),
             epsilon=1e-6,
             lr=0.01,
             batch_size=64,
@@ -161,7 +231,7 @@ def plot_cnn_vs_nn(number_epochs=20):
     plt.legend(loc='best')
     plt.xlabel('epoch')
     plt.ylabel('loss')
-    plt.show()
+    plt.savefig('imgs/cnn_vs_nn_loss_' + time.strftime("%Y%m%d-%H%M%S") + '.pdf')
 
     plt.figure()
     plt.plot(range(number_epochs), cnn.train_logs['train_accuracy'], label='cnn train_accuracy', linestyle="--")
@@ -171,12 +241,36 @@ def plot_cnn_vs_nn(number_epochs=20):
     plt.legend(loc='best')
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
-    plt.show()
+    plt.savefig('imgs/cnn_vs_nn_accuracy_' + time.strftime("%Y%m%d-%H%M%S") + '.pdf')
+
+
+def compare_regularization(number_epochs=20, dropout=False, L2=False):
+
+    vanilla_net = train_CNN(number_epochs)
+    reg_net = train_CNN(number_epochs, dropout=dropout, L2=L2)
+
+    plt.figure()
+    plt.plot(range(number_epochs), vanilla_net.train_logs['train_loss'], label='vanilla train_loss', linestyle="--")
+    plt.plot(range(number_epochs), vanilla_net.train_logs['validation_loss'], label='vanilla validation_loss', linestyle="--")
+    plt.plot(range(number_epochs), reg_net.train_logs['train_loss'], label='regularized train_loss')
+    plt.plot(range(number_epochs), reg_net.train_logs['validation_loss'], label='regularized validation_loss')
+    plt.legend(loc='best')
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.savefig('imgs/vanilla_vs_reg_loss_' + time.strftime("%Y%m%d-%H%M%S") + '.pdf')
+
+    plt.figure()
+    plt.plot(range(number_epochs), vanilla_net.train_logs['train_accuracy'], label='vanilla train_accuracy', linestyle="--")
+    plt.plot(range(number_epochs), vanilla_net.train_logs['validation_accuracy'], label='vanilla validation_accuracy', linestyle="--")
+    plt.plot(range(number_epochs), reg_net.train_logs['train_accuracy'], label='regularized train_accuracy')
+    plt.plot(range(number_epochs), reg_net.train_logs['validation_accuracy'], label='regularized validation_accuracy')
+    plt.legend(loc='best')
+    plt.xlabel('epoch')
+    plt.ylabel('accuracy')
+    plt.savefig('imgs/vanilla_vs_reg_accuracy_' + time.strftime("%Y%m%d-%H%M%S") + '.pdf')
 
 
 if __name__ == '__main__':
-
-    import sys
 
     # Add logger
     logging_level = logging.INFO
@@ -196,7 +290,8 @@ if __name__ == '__main__':
     # launch_grid_search()
 
     # Q4
-    # TODO: code it
+    # compare_gradients(20)
 
     # Q5
-    plot_cnn_vs_nn(20)
+    # plot_cnn_vs_nn(20)
+    compare_regularization(50, dropout=False, L2=True)
