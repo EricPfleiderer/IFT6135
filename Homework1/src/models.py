@@ -29,7 +29,7 @@ class NN2(NN):
 
             self.weights[f"b{layer_n}"] = np.zeros((1, all_dims[layer_n]))
 
-    def train_loop(self, n_epochs, init_type='glorot'):
+    def train_loop(self, n_epochs, init_type='glorot', first_pass=False):
         X_train, y_train = self.train
         y_onehot = y_train
         dims = [X_train.shape[1], y_onehot.shape[1]]
@@ -37,8 +37,19 @@ class NN2(NN):
 
         n_batches = int(np.ceil(X_train.shape[0] / self.batch_size))
 
+        # First pass
+        if first_pass:
+            X_train, y_train = self.train
+            train_loss, train_accuracy, _ = self.compute_loss_and_accuracy(X_train, y_train)
+            X_valid, y_valid = self.valid
+            valid_loss, valid_accuracy, _ = self.compute_loss_and_accuracy(X_valid, y_valid)
+            self.train_logs['train_accuracy'].append(train_accuracy)
+            self.train_logs['validation_accuracy'].append(valid_accuracy)
+            self.train_logs['train_loss'].append(train_loss)
+            self.train_logs['validation_loss'].append(valid_loss)
+
         for epoch in range(n_epochs):
-            logging.info('epoch: ', epoch)
+            logging.info('epoch: ' + str(epoch))
             for batch in range(n_batches):
                 minibatchX = X_train[self.batch_size * batch:self.batch_size * (batch + 1), :]
                 minibatchY = y_onehot[self.batch_size * batch:self.batch_size * (batch + 1), :]
@@ -61,14 +72,14 @@ class NN2(NN):
 
 # Q5
 class CNN(nn.Module):
-    def __init__(self, train_loader, val_loader, optimizer, criterion, dropout=False, L2=False):
+    def __init__(self, train_loader, val_loader, optimizer, criterion, dropout=False, L2=False, first_pass=False):
         super(CNN, self).__init__()
 
         # Model
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=150, kernel_size=5, stride=1, padding=0)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.conv2 = nn.Conv2d(in_channels=150, out_channels=200, kernel_size=5)
-        self.fc1 = nn.Linear(in_features=200 * 5 * 5, out_features=512)
+        self.conv2 = nn.Conv2d(in_channels=150, out_channels=220, kernel_size=5)
+        self.fc1 = nn.Linear(in_features=220 * 5 * 5, out_features=512)
         self.fc2 = nn.Linear(in_features=512, out_features=64)
         self.fc3 = nn.Linear(in_features=64, out_features=64)
         self.fc4 = nn.Linear(in_features=64, out_features=10)
@@ -92,8 +103,8 @@ class CNN(nn.Module):
         self.val_loader = val_loader
 
         # Loss / optimizer
-        decay = 0.005 if L2 else 0
-        self.optimizer = optimizer(self.parameters(), lr=0.01, weight_decay=decay)
+        decay = 0.01 if L2 else 0
+        self.optimizer = optimizer(self.parameters(), lr=0.005, weight_decay=decay)
         self.criterion = criterion()
 
         # Training logs
@@ -103,6 +114,9 @@ class CNN(nn.Module):
         self.train_logs['train_loss'] = []
         self.train_logs['validation_loss'] = []
 
+        if first_pass:
+            self.first_pass()
+
     # Forward pass
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -111,7 +125,7 @@ class CNN(nn.Module):
         if self.dropout:
             x = self.drop(x)
         x = self.pool(x)
-        x = x.view(-1, 200 * 5 * 5)
+        x = x.view(-1, 220 * 5 * 5)
         x = F.relu(self.fc1(x))
         if self.dropout:
             x = self.drop(x)
@@ -127,7 +141,7 @@ class CNN(nn.Module):
         self.train_step()
         self.validation_step()
 
-    def train_step(self):
+    def train_step(self, learning=True):
 
         running_loss = 0.0
         running_hits = 0
@@ -146,8 +160,10 @@ class CNN(nn.Module):
             # Forward / Backward pass
             outputs = self.forward(inputs)
             loss = self.criterion(outputs, labels.long())
-            loss.backward()
-            self.optimizer.step()
+
+            if learning:
+                loss.backward()
+                self.optimizer.step()
 
             # Statistics
             running_loss += loss.item()
@@ -186,4 +202,8 @@ class CNN(nn.Module):
 
         self.train_logs['validation_loss'].append(loss)
         self.train_logs['validation_accuracy'].append(accuracy)
+
+    def first_pass(self):
+        self.train_step(learning=False)
+        self.validation_step()
 

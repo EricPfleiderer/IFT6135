@@ -111,7 +111,7 @@ def Q4():
     pass
 
 
-def train_CNN(number_epochs=20, dropout=False, L2=False):
+def train_CNN(number_epochs=20, dropout=False, L2=False, first_pass=False):
 
     # Split data by features / targets
     train_x, train_y = data[0][0], data[0][1]
@@ -127,7 +127,7 @@ def train_CNN(number_epochs=20, dropout=False, L2=False):
     val_loader = DataLoader(TensorDataset(tensor_x_val, tensor_y_val), batch_size=256, shuffle=False)
 
     # Train the model
-    net = CNN(train_loader, val_loader, optim.SGD, nn.CrossEntropyLoss, dropout, L2=L2)
+    net = CNN(train_loader, val_loader, optim.SGD, nn.CrossEntropyLoss, dropout, L2=L2, first_pass=first_pass)
 
     for epoch in range(number_epochs):
         logging.info('-----------------------------------')
@@ -208,36 +208,36 @@ def compare_gradients(number_epochs=20):
     plt.savefig('imgs/maxdiff_vs_n_' + time.strftime("%Y%m%d-%H%M%S") + '.pdf')
 
 
-def plot_cnn_vs_nn(number_epochs=20):
+def plot_cnn_vs_nn(number_epochs=20, first_pass=False):
 
-    cnn = train_CNN(number_epochs=number_epochs)
+    cnn = train_CNN(number_epochs=number_epochs, first_pass=first_pass)
 
-    nn = NN(hidden_dims=(1024, 512, 64, 64),
-            epsilon=1e-6,
-            lr=0.01,
-            batch_size=64,
-            seed=1,
-            activation="relu",
-            data=flat_data)
+    nn = NN2(hidden_dims=(1024, 512, 64, 64),
+             epsilon=1e-6,
+             lr=0.01,
+             batch_size=64,
+             seed=1,
+             activation="relu",
+             data=flat_data)
 
     print('Training glorot net...')
-    nn.train_loop(number_epochs)
+    nn.train_loop(number_epochs, first_pass=first_pass)
 
     plt.figure()
-    plt.plot(range(number_epochs), cnn.train_logs['train_loss'], label='cnn train_loss', linestyle="--")
-    plt.plot(range(number_epochs), cnn.train_logs['validation_loss'], label='cnn validation_loss', linestyle="--")
-    plt.plot(range(number_epochs), nn.train_logs['train_loss'], label='nn train_loss')
-    plt.plot(range(number_epochs), nn.train_logs['validation_loss'], label='nn validation_loss')
+    plt.plot(range(len(cnn.train_logs['train_loss'])), cnn.train_logs['train_loss'], label='cnn train_loss', linestyle="--")
+    plt.plot(range(len(cnn.train_logs['validation_loss'])), cnn.train_logs['validation_loss'], label='cnn validation_loss', linestyle="--")
+    plt.plot(range(len(nn.train_logs['train_loss'])), nn.train_logs['train_loss'], label='nn train_loss')
+    plt.plot(range(len(nn.train_logs['validation_loss'])), nn.train_logs['validation_loss'], label='nn validation_loss')
     plt.legend(loc='best')
     plt.xlabel('epoch')
     plt.ylabel('loss')
     plt.savefig('imgs/cnn_vs_nn_loss_' + time.strftime("%Y%m%d-%H%M%S") + '.pdf')
 
     plt.figure()
-    plt.plot(range(number_epochs), cnn.train_logs['train_accuracy'], label='cnn train_accuracy', linestyle="--")
-    plt.plot(range(number_epochs), cnn.train_logs['validation_accuracy'], label='cnn validation_accuracy', linestyle="--")
-    plt.plot(range(number_epochs), nn.train_logs['train_accuracy'], label='nn train_accuracy')
-    plt.plot(range(number_epochs), nn.train_logs['validation_accuracy'], label='nn validation_accuracy')
+    plt.plot(range(len(cnn.train_logs['train_accuracy'])), cnn.train_logs['train_accuracy'], label='cnn train_accuracy', linestyle="--")
+    plt.plot(range(len(cnn.train_logs['validation_accuracy'])), cnn.train_logs['validation_accuracy'], label='cnn validation_accuracy', linestyle="--")
+    plt.plot(range(len(nn.train_logs['train_accuracy'])), nn.train_logs['train_accuracy'], label='nn train_accuracy')
+    plt.plot(range(len(nn.train_logs['validation_accuracy'])), nn.train_logs['validation_accuracy'], label='nn validation_accuracy')
     plt.legend(loc='best')
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
@@ -294,4 +294,4 @@ if __name__ == '__main__':
 
     # Q5
     # plot_cnn_vs_nn(20)
-    compare_regularization(50, dropout=False, L2=True)
+    compare_regularization(40, L2=True)
