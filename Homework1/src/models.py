@@ -25,7 +25,7 @@ class NN2(NN):
                 self.weights[f"W{layer_n}"] = np.random.uniform(-d, d, size=(all_dims[layer_n - 1], all_dims[layer_n]))
 
             elif init_type == 'normal':
-                self.weights[f"W{layer_n}"] = np.random.normal(0, 0.1, size=(all_dims[layer_n - 1], all_dims[layer_n]))
+                self.weights[f"W{layer_n}"] = np.random.normal(0, np.sqrt(0.1), size=(all_dims[layer_n - 1], all_dims[layer_n]))
 
             self.weights[f"b{layer_n}"] = np.zeros((1, all_dims[layer_n]))
 
@@ -103,7 +103,7 @@ class CNN(nn.Module):
         self.val_loader = val_loader
 
         # Loss / optimizer
-        decay = 0.01 if L2 else 0
+        decay = 0.005 if L2 else 0
         self.optimizer = optimizer(self.parameters(), lr=0.005, weight_decay=decay)
         self.criterion = criterion()
 

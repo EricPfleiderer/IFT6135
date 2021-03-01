@@ -78,7 +78,7 @@ def validate_config(l, a, number_epochs=20):
     neural_net.train_loop(number_epochs)
     final_val = neural_net.train_logs['validation_accuracy'][-1]
 
-    logging.INFO(f'Final validation accuracy for shape:{l} and activation:{a} is {final_val}.\n')
+    logging.info(f'Final validation accuracy for shape:{l} and activation:{a} is {final_val}.\n')
 
 
 def launch_grid_search(number_epochs=20):
@@ -87,8 +87,8 @@ def launch_grid_search(number_epochs=20):
                     'activation': ['relu', 'tanh', 'sigmoid']
                     }
 
-    logging.INFO('----------------------GRID SEARCH START----------------------\n')
-    logging.INFO(f'Training for {number_epochs} epochs.\n')
+    logging.info('----------------------GRID SEARCH START----------------------\n')
+    logging.info(f'Training for {number_epochs} epochs.\n')
 
     # Spin up parallel processes to speed things up
     processes = []
@@ -103,7 +103,7 @@ def launch_grid_search(number_epochs=20):
     for p in processes:
         p.join()
 
-    logging.INFO(f'----------------------GRID SEARCH END----------------------\n')
+    logging.info(f'----------------------GRID SEARCH END----------------------\n')
 
 
 # Q4
@@ -197,7 +197,7 @@ def compare_gradients(number_epochs=20):
         exact_diffs[m] = grads[idx, idy]
 
     # Compute difference between derivatives
-    diffs = finite_diffs - exact_diffs  # 5x100 and 100
+    diffs = np.abs(finite_diffs - exact_diffs)  # 5x100 and 100
     max_diffs = np.max(diffs, axis=1)
 
     plt.figure()
@@ -290,8 +290,8 @@ if __name__ == '__main__':
     # launch_grid_search()
 
     # Q4
-    # compare_gradients(20)
+    compare_gradients(20)
 
     # Q5
     # plot_cnn_vs_nn(20)
-    compare_regularization(40, L2=True)
+    # compare_regularization(80, L2=True)
