@@ -106,12 +106,7 @@ def launch_grid_search(number_epochs=20):
     logging.info(f'----------------------GRID SEARCH END----------------------\n')
 
 
-# Q4
-def Q4():
-    pass
-
-
-def train_CNN(number_epochs=20, dropout=False, L2=False, first_pass=False):
+def train_CNN(number_epochs=20, dropout=False, L2=False, batch_norm=False, first_pass=False):
 
     # Split data by features / targets
     train_x, train_y = data[0][0], data[0][1]
@@ -127,7 +122,7 @@ def train_CNN(number_epochs=20, dropout=False, L2=False, first_pass=False):
     val_loader = DataLoader(TensorDataset(tensor_x_val, tensor_y_val), batch_size=256, shuffle=False)
 
     # Train the model
-    net = CNN(train_loader, val_loader, optim.SGD, nn.CrossEntropyLoss, dropout, L2=L2, first_pass=first_pass)
+    net = CNN(train_loader, val_loader, optim.SGD, nn.CrossEntropyLoss, dropout, L2=L2, batch_norm=batch_norm, first_pass=first_pass)
 
     for epoch in range(number_epochs):
         logging.info('-----------------------------------')
@@ -156,8 +151,8 @@ def compare_gradients(number_epochs=20):
     net.train_loop(number_epochs)
 
     # Single data point (batched)
-    x = flat_train_data[0][0][None, :]
-    target = flat_train_data[1][0][None, :]
+    x = flat_train_data[0][5][None, :]
+    target = flat_train_data[1][5][None, :]
 
     # Get 100 first parameters of the last layer
     layer_id = net.n_hidden+1
@@ -173,7 +168,7 @@ def compare_gradients(number_epochs=20):
             idx = j // weights.shape[1]
             idy = j % weights.shape[1]
 
-            # Delta +
+            # Delta -
             weights[idx, idy] -= epsilon
             pred_m = net.forward(x)[f'Z{layer_id}']
             loss_m = net.loss(pred_m, target)
@@ -183,7 +178,7 @@ def compare_gradients(number_epochs=20):
             weights[idx, idy] += epsilon
             pred_p = net.forward(x)[f'Z{layer_id}']
             loss_p = net.loss(pred_p, target)
-            weights[idx, idy] += epsilon
+            weights[idx, idy] -= epsilon
 
             finite_diffs[i, j] = (loss_p-loss_m)/(2*epsilon)
 
@@ -244,10 +239,10 @@ def plot_cnn_vs_nn(number_epochs=20, first_pass=False):
     plt.savefig('imgs/cnn_vs_nn_accuracy_' + time.strftime("%Y%m%d-%H%M%S") + '.pdf')
 
 
-def compare_regularization(number_epochs=20, dropout=False, L2=False):
+def compare_regularization(number_epochs=20, dropout=False, L2=False, batch_norm=False):
 
     vanilla_net = train_CNN(number_epochs)
-    reg_net = train_CNN(number_epochs, dropout=dropout, L2=L2)
+    reg_net = train_CNN(number_epochs, dropout=dropout, L2=L2, batch_norm=batch_norm)
 
     plt.figure()
     plt.plot(range(number_epochs), vanilla_net.train_logs['train_loss'], label='vanilla train_loss', linestyle="--")
@@ -290,8 +285,8 @@ if __name__ == '__main__':
     # launch_grid_search()
 
     # Q4
-    compare_gradients(20)
+    # compare_gradients(20)
 
     # Q5
     # plot_cnn_vs_nn(20)
-    # compare_regularization(80, L2=True)
+    compare_regularization(80, batch_norm=True)

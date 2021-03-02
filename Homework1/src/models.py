@@ -72,13 +72,15 @@ class NN2(NN):
 
 # Q5
 class CNN(nn.Module):
-    def __init__(self, train_loader, val_loader, optimizer, criterion, dropout=False, L2=False, first_pass=False):
+    def __init__(self, train_loader, val_loader, optimizer, criterion, dropout=False, L2=False, first_pass=False, batch_norm=False):
         super(CNN, self).__init__()
 
         # Model
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=150, kernel_size=5, stride=1, padding=0)
+        self.batch_norm1 = nn.BatchNorm2d(150)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.conv2 = nn.Conv2d(in_channels=150, out_channels=220, kernel_size=5)
+        self.batch_norm2 = nn.BatchNorm2d(220)
         self.fc1 = nn.Linear(in_features=220 * 5 * 5, out_features=512)
         self.fc2 = nn.Linear(in_features=512, out_features=64)
         self.fc3 = nn.Linear(in_features=64, out_features=64)
@@ -93,17 +95,20 @@ class CNN(nn.Module):
 
         self.L2 = L2
         self.dropout = dropout
+        self.batch_norm = batch_norm
         if self.L2:
             logging.info('Implementing weight decay')
         if self.dropout:
             logging.info('Implementing dropout')
+        if self.batch_norm:
+            logging.info("Implementing batch norm")
 
         # Data
         self.train_loader = train_loader
         self.val_loader = val_loader
 
         # Loss / optimizer
-        decay = 0.005 if L2 else 0
+        decay = 0.0025 if L2 else 0
         self.optimizer = optimizer(self.parameters(), lr=0.005, weight_decay=decay)
         self.criterion = criterion()
 
@@ -120,8 +125,12 @@ class CNN(nn.Module):
     # Forward pass
     def forward(self, x):
         x = F.relu(self.conv1(x))
+        if self.batch_norm:
+            x = self.batch_norm1(x)
         x = self.pool(x)
         x = F.relu(self.conv2(x))
+        if self.batch_norm:
+            x = self.batch_norm2(x)
         if self.dropout:
             x = self.drop(x)
         x = self.pool(x)
