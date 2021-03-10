@@ -171,7 +171,7 @@ class MultiHeadedAttention(nn.Module):
         Parameters
         ----------
         tensor (`torch.FloatTensor` of shape `(batch_size, sequence_length, num_heads * dim)`)
-            Input tensor containing the concatenated head vectors (each having
+            Input tensorc containing the oncatenated head vectors (each having
             a size `dim`, which can be arbitrary).
 
         Returns
@@ -181,11 +181,9 @@ class MultiHeadedAttention(nn.Module):
             vectors. Here `dim` is the same dimension as the one in the
             definition of the input `tensor` above.
         """
-
-        # ==========================
-        # TODO: Write your code here
-        # ==========================
-        pass
+        
+        y = torch.reshape(tensor, shape=(tensor.shape[0], self.sequence_length, self.num_heads, tensor.shape[-1]//self.num_heads))
+        return torch.transpose(y, 1, 2)
 
     def merge_heads(self, tensor):
         """Merge the head vectors.
@@ -210,10 +208,8 @@ class MultiHeadedAttention(nn.Module):
             definition of the input `tensor` above.
         """
 
-        # ==========================
-        # TODO: Write your code here
-        # ==========================
-        pass
+        y = torch.transpose(tensor, 1, 2)
+        return torch.flatten(y, start_dim=2, end_dim=3)
 
     def forward(self, hidden_states):
         """Multi-headed attention.
