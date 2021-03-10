@@ -100,10 +100,13 @@ class MultiHeadedAttention(nn.Module):
             should not influence on the 6th token (7 > 5).
         """
 
-        # ==========================
-        # TODO: Write your code here
-        # ==========================
-        pass
+        numerator = torch.matmul(queries, torch.transpose(keys, 2, 3))
+        numerator[numerator == 0] = -float('inf')  # kind of hacky, but chances of dot product taking 0 value is practically impossible
+        denum = math.sqrt(self.head_size)
+        masked = torch.tril(numerator/denum)
+        masked[masked == 0] = -float('inf')
+
+        return torch.softmax(masked, dim=3)
 
     def apply_attention(self, queries, keys, values):
         """Apply the attention.
@@ -181,7 +184,7 @@ class MultiHeadedAttention(nn.Module):
             vectors. Here `dim` is the same dimension as the one in the
             definition of the input `tensor` above.
         """
-        
+
         y = torch.reshape(tensor, shape=(tensor.shape[0], self.sequence_length, self.num_heads, tensor.shape[-1]//self.num_heads))
         return torch.transpose(y, 1, 2)
 
