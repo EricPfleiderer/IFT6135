@@ -37,6 +37,8 @@ class LayerNorm(nn.Module):
             The output tensor, having the same shape as `inputs`.
         """
 
+        # TODO: copy inputs before assignment to numerator?
+
         dim = len(inputs.shape) - 1  # Last dimension
         numerator = inputs-torch.unsqueeze(torch.mean(inputs, dim=dim), dim=dim)
         denumerator = torch.unsqueeze(torch.sqrt(torch.var(inputs, dim=dim, unbiased=False)+self.eps), dim=dim)
@@ -54,9 +56,10 @@ class MultiHeadedAttention(nn.Module):
         self.num_heads = num_heads
         self.sequence_length = sequence_length
 
-        # ==========================
-        # TODO: Write your code here
-        # ==========================
+        self.K = nn.Linear(num_heads*head_size, num_heads*head_size)
+        self.V = nn.Linear(num_heads*head_size, num_heads*head_size)
+        self.Q = nn.Linear(num_heads*head_size, num_heads*head_size)
+        self.O = nn.Linear(num_heads*head_size, num_heads*head_size)
 
     def get_attention_weights(self, queries, keys):
         """Compute the attention weights.
@@ -100,12 +103,18 @@ class MultiHeadedAttention(nn.Module):
             should not influence on the 6th token (7 > 5).
         """
 
+        # numerator = torch.matmul(queries, torch.transpose(keys, 2, 3))
+        # denum = math.sqrt(self.head_size)
+        # mask = torch.tril(torch.ones(numerator.shape))
+        # masked = (numerator/denum) * mask - 10**4*(1-mask)
+        # return torch.softmax(masked, dim=3)
+
+        # TODO: maybe refactor according to definition if not stable?
         numerator = torch.matmul(queries, torch.transpose(keys, 2, 3))
-        numerator[numerator == 0] = -float('inf')  # kind of hacky, but chances of dot product taking 0 value is practically impossible
+        numerator[numerator == 0] = -float('inf')  # kind of hacky, but probability of dot product taking 0 value is practically 0
         denum = math.sqrt(self.head_size)
         masked = torch.tril(numerator/denum)
         masked[masked == 0] = -float('inf')
-
         return torch.softmax(masked, dim=3)
 
     def apply_attention(self, queries, keys, values):
@@ -156,10 +165,9 @@ class MultiHeadedAttention(nn.Module):
             sequence in the batch (index 0).
         """
 
-        # ==========================
-        # TODO: Write your code here
-        # ==========================
-        pass
+        weights = self.get_attention_weights(queries, keys)
+        z = torch.matmul(weights, values)
+        return self.merge_heads(z)
 
     def split_heads(self, tensor):
         """Split the head vectors.
@@ -223,7 +231,7 @@ class MultiHeadedAttention(nn.Module):
         containing the concatenated head vectors), then the output of multi-headed
         attention is given by
 
-            Q = X * W_{Q} + b_{Q}        # Queries
+            Q = X * W_{Q} + b_{Q}        # Queries batch_size, num_heads, sequence_length, head_size)`)
             K = X * W_{K} + b_{K}        # Keys
             V = X * W_{V} + b_{V}        # Values
 
@@ -246,10 +254,11 @@ class MultiHeadedAttention(nn.Module):
             sequences in the batch, and all positions in each sequence.
         """
 
-        # ==========================
-        # TODO: Write your code here
-        # ==========================
-        pass
+        Q = self.split_heads(self.Q(hidden_states))
+        K = self.split_heads(self.K(hidden_states))
+        V = self.split_heads(self.V(hidden_states))
+        Y = self.apply_attention(Q, K, V)
+        return self.O(Y)
 
 
 class Block(nn.Module):
