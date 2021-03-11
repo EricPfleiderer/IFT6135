@@ -356,11 +356,7 @@ class MiniGPT1(nn.Module):
             is the embedding vector for the token in 3rd position (index 2)
             of the 1st sequence in the batch (index 0).
         """
-
-        # ==========================
-        # TODO: Write your code here
-        # ==========================
-        pass
+        return self.embedding(inputs, (torch.ones(size=inputs.shape)*torch.arange(0, self.sequence_length)).long())
 
     def forward(self, inputs):
         """Mini GPT-1.
@@ -383,11 +379,11 @@ class MiniGPT1(nn.Module):
             after x_{4} at index 3, and token_{7} for index 6) for the 1st sequence
             of the batch (index 0).
         """
-
-        # ==========================
-        # TODO: Write your code here
-        # ==========================
-        pass
+        x = self.get_embeddings(inputs)
+        for block in self.layers:
+            x = block(x)
+        x = self.classifier(x)
+        return nn.LogSoftmax(dim=-1)(x)
 
     def loss(self, log_probas, targets, mask):
         """Loss function.
@@ -415,11 +411,17 @@ class MiniGPT1(nn.Module):
             The scalar loss, corresponding to the (mean) negative log-likelihood.
         """
 
-        # ==========================
-        # TODO: Write your code here
-        # ==========================
-        pass
+        mesh = np.array(np.meshgrid(np.arange(log_probas.shape[0]), np.arange(log_probas.shape[1])))
+        combs = mesh.T.reshape(-1, 2)  # List of combinations in the meshgrid
+        idx, idy, idz = combs[:, 0],  combs[:, 1], targets.flatten()
 
+        non_zero_preds = log_probas[idx, idy, idz].reshape(targets.shape)
+        masked_preds = non_zero_preds * mask  # Apply the mask
+        mean_masked_preds = torch.sum(masked_preds, dim=1) / torch.sum(mask, dim=1)  # Average over seq
+        loss = -torch.mean(mean_masked_preds)  # Average over batches
+
+        return loss
+    
     @classmethod
     def load_embeddings_from(
         cls, filename, num_heads=12, num_layers=4, learn_embeddings=False
